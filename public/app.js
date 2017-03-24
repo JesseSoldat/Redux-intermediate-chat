@@ -23,7 +23,27 @@ function reducer(state, action) {
 	}
 }
 
-const initialState = { messages: [] };
+const initialState = {
+	activeThreadId: '1-fca2',
+	threads: [
+		{
+			id: '1-fca2',
+			title: 'Buzz Aldrin',
+			messages: [
+				{
+					text: 'Twelve minutes to ignition',
+					timestamp: Date.now(),
+					id: uuid.v4(),
+				}
+			]
+		},
+		{
+			id: '2-be91',
+			title: 'Michael Collins',
+			messages: [],
+		},
+	], 
+}
 
 const store = Redux.createStore(reducer, initialState);
 
@@ -33,12 +53,39 @@ class App extends React.Component {
 	}
 
 	render() {
-		const messages = store.getState().messages;
+		const state = store.getState();
+		const activeThreadId = state.activeThreadId;
+		const threads = state.threads;
+		const activeThread = threads.find((t) => t.id === activeThreadId);
+
+		const tabs = threads.map(t => (
+			{
+				title: t.title,
+				active: t.id === activeThreadId
+			}
+		));
 
 		return (
 			<div className='ui segment'>
-				<MessageView messages={messages} />
-				<MessageInput/>
+				<ThreadTabs tabs={tabs} />
+				<Thread thread={activeThread} />
+			</div>
+		);
+	}
+}
+
+class ThreadTabs extends React.Component {
+	render() {
+		const tabs = this.props.tabs.map((tab, i) => (
+			<div key={i} 
+				className={tab.active ? 'active item' : 'item'}
+			>
+				{tab.title}
+			</div>
+		));
+		return (
+			<div className='ui top attached tabular menu'>
+				{tabs}
 			</div>
 		);
 	}
@@ -67,19 +114,23 @@ class MessageInput extends React.Component {
 	}
 }
 
-class MessageView extends React.Component {
+class Thread extends React.Component {
 	handleClick(id) {
 		store.dispatch({
-			type: 'DELETE_MESSAGE',
-			id: id
-		});
-	};
+      type: 'DELETE_MESSAGE',
+      id: id,
+    });
+	}
 
 	render() {
-		const messages = this.props.messages.map((msg, i) => (
-			<div className='comment' key={i} onClick={() => this.handleClick(msg.id)}>
-				{msg.text}
-				<span className='metadata'>@{msg.timestamp}</span>
+		const messages = this.props.thread.messages.map((msg, i) => (
+			<div className='comment' key={i}
+				onClick={() => this.handleClick(msg.id)}
+			>
+				<div className='text'>
+					{msg.text}
+					<span className='metadata'>@{msg.timestamp}</span>
+				</div>
 			</div>
 		));
 		return (
@@ -87,9 +138,13 @@ class MessageView extends React.Component {
 				<div className='ui comments'>
 					{messages}
 				</div>
+				<MessageInput />
 			</div>
 		);
-	}
+	}	
 }
+
+
+
 
 ReactDOM.render(<App/>, document.getElementById('content'));
