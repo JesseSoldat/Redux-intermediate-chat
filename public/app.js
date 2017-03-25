@@ -23,13 +23,33 @@ function reducer(state, action) {
 			],
 		};
 	} else if (action.type === 'DELETE_MESSAGE') {
-			const index = state.messages.findIndex(
+			const threadIndex = state.threads.findIndex(
+				(t) => t.messages.find((m) => (
+					m.id === action.id
+				))
+			);
+			const oldThread = state.threads[threadIndex];
+			const messageIndex = oldThread.messages.findIndex(
 				(m) => m.id === action.id
 			);
+			const messages = [
+				...oldThread.messages.slice(0, messageIndex),
+				...oldThread.messages.slice(
+					messageIndex + 1, oldThread.messages.length
+				)
+			];
+			const newThread = {
+				...oldThread,
+				messages: messages
+			};
 		return {
-			messages: [
-				...state.messages.slice(0, index),
-				...state.messages.slice(action.index + 1, messages.length)
+			...state,
+			threads: [
+				...state.threads.slice(0, threadIndex),
+				newThread,
+				...state.threads.slice(
+					threadIndex + 1, state.threads.length
+				)
 			]
 		};
 	} else {
@@ -116,10 +136,17 @@ class MessageInput extends React.Component {
 		this.refs.messageInput.value = '';
 	};
 
+	handleKeyEnter(e){
+		if(e.charCode === 13){
+			this.handleSubmit();
+		}
+	}
+
 	render() {
 		return (
 			<div className='ui input'>
-				<input ref='messageInput' type='text' />
+				<input ref='messageInput' type='text'
+					onKeyPress={this.handleKeyEnter.bind(this)} />
 				<button onClick={this.handleSubmit.bind(this)}
 					className="ui primary button" type="submit">
 					Submit
