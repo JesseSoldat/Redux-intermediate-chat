@@ -135,7 +135,7 @@ class ThreadTabs extends React.Component {
 			<div className='ui top attached tabular menu'>
 				{tabs}
 			</div>
-		);
+		); 
 	}
 }
 

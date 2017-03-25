@@ -37,18 +37,20 @@ function threadsReducer(state, action) {
 		];
 	} else if (action.type === 'DELETE_MESSAGE') {
 		const threadIndex = state.findIndex(
-			(t) => t.messages.findIndex((m) => (
+			(t) => t.messages.find((m) => (
 				m.id === action.id
 			))
 		);
+
 		const oldThread = state[threadIndex];
 		const messageIndex = oldThread.messages.findIndex(
 			(m) => m.id === action.id
 		);
 		const messages = [
 			...oldThread.messages.slice(0, messageIndex),
-			...oldThread.messages.slice(messageIndex + 1, messages.length)
+			...oldThread.messages.slice(messageIndex + 1, oldThread.messages.length)
 		];
+		console.log(messages);
 		const newThread = {
 			...oldThread,
 			messages: messages
@@ -110,12 +112,14 @@ class App extends React.Component {
 		return (
 			<div className='ui segment'>
 				<ThreadTabs tabs={tabs} />
+				<Thread thread={activeThread} />
 			</div>
 		)
 	}
 }
 
 class ThreadTabs extends React.Component {
+
 	handleClick(id) {
 		store.dispatch({
 			type: 'OPEN_THREAD',
@@ -134,6 +138,68 @@ class ThreadTabs extends React.Component {
 		return (
 			<div className='ui top attached tabular menu'>
 				{tabs}
+			</div>
+		);
+	}
+}
+
+class MessageInput extends React.Component {
+
+	handleSubmit() {
+		store.dispatch({
+			type: 'ADD_MESSAGE',
+			text: this.refs.messageInput.value,
+			threadId: this.props.threadId
+		});
+		this.refs.messageInput.value = '';
+	}
+
+	handleKeyPress(e) {
+		if(e.charCode === 13) {
+			this.handleSubmit();
+		}
+	}
+
+	render() {
+		return (
+			<div className='ui input'>
+				<input ref='messageInput' 
+							type='text'
+							onKeyPress={this.handleKeyPress.bind(this)} />
+				<button type='submit' className='ui primary button'
+							onClick={this.handleSubmit.bind(this)}>
+						Submit
+				</button>
+			</div>
+		)
+	}
+}
+
+class Thread extends React.Component {
+	handleClick(id) {
+		store.dispatch({
+			type: 'DELETE_MESSAGE',
+			id: id
+		});
+	};
+
+	render() {
+		const messages = this.props.thread.messages.map((msg, i) => (
+			<div className='comment' key={i}
+				onClick={() => this.handleClick(msg.id)}>
+				<div className='text'>
+					{msg.text}
+					<span className='metadata'>@{msg.timestamp}</span>
+				</div>
+			</div>
+		));
+
+		return (
+			<div className='ui center aligned basic segment'>
+				<div className='ui comments'>
+					{messages}
+				</div>
+				<MessageInput threadId={this.props.thread.id} />
 			</div>
 		);
 	}
