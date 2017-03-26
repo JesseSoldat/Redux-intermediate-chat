@@ -35,7 +35,41 @@ function threadsReducer(state, action) {
 		case 'ADD_MESSAGE':
 		case 'DELETE_MESSAGE': {
 			const threadIndex = findThreadIndex(state, action);
-			console.log(threadIndex);
+
+			const oldThread = state[threadIndex];
+			const newThread = {
+				...oldThread,
+				messages: messagesReducer(oldThread.messages, action)
+			};
+
+			return [
+				...state.slice(0, threadIndex),
+				newThread,
+				...state.slice(threadIndex + 1, state.length)
+			];	
+		}
+		default: {
+			return state;
+		}
+	}
+}
+
+function messagesReducer(state, action) {
+	switch(action.type) {
+		case 'ADD_MESSAGE': {
+			const newMessage = {
+				text: action.text,
+				timestamp: Date.now(),
+				id: uuid.v4()
+			};
+			return state.concat(newMessage);
+		}
+		case 'DELETE_MESSAGE': {
+			const messageIndex = state.findIndex((m) => m.id === action.id);
+			return [
+				...state.slice(0, messageIndex),
+				...state.slice(messageIndex + 1, state.length)
+			];
 		}
 		default: {
 			return state;
@@ -89,6 +123,7 @@ class App extends React.Component {
 		return (
 			<div className='ui segment'>
 				<ThreadTabs tabs={tabs} />
+				<Thread thread={activeThread} />
 			</div>
 		);
 	}
@@ -114,6 +149,70 @@ class ThreadTabs extends React.Component {
 				{tabs}
 			</div>
 		)
+	}
+}
+
+class MessageInput extends React.Component {
+	handleSubmit() {
+		store.dispatch({
+			type: 'ADD_MESSAGE',
+			text: this.refs.messageInput.value,
+			threadId: this.props.threadId
+		});
+		this.refs.messageInput.value = '';
+
+	}
+
+	handleEnter(e) {
+		if(e.charCode === 13){
+			this.handleSubmit();
+		}
+	}
+
+	render() {
+		return (
+			<div className='ui input' >
+				<input onKeyPress={this.handleEnter.bind(this)}
+					ref='messageInput'
+					type='text'
+					/>
+				<button type='submit' 
+					className='ui button primary'
+					onClick={this.handleSubmit.bind(this)}
+					>
+					Submit
+				</button>
+			</div>
+		)
+	}
+}
+
+class Thread extends React.Component {
+	handleClick(id) {
+		store.dispatch({
+			type: 'DELETE_MESSAGE',
+			id: id
+		});
+	}
+
+	render() {
+		const messages = this.props.thread.messages.map((msg, i) => (
+			<div key={i} onClick={() => this.handleClick(msg.id)}
+				className='comment'>
+				<div className='text'>
+					{msg.text}
+					<span className='metadata'>@{msg.timestamp}</span>
+				</div>
+			</div>
+		));
+		return (
+			<div className='ui center aligned basic segment'>
+				<div className='ui comments'>
+					{messages}
+				</div>
+				<MessageInput threadId={this.props.thread.id} />
+			</div>
+		);
 	}
 }
 
