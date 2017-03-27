@@ -100,6 +100,36 @@ const Tabs = (props) => (
 	</div>
 );
 
+const mapStateToTabsProps = (state) => {
+	const tabs = state.threads.map(t => (
+		{
+			title: t.title,
+			active: t.id === state.activeThreadId,
+			id: t.id,	
+		}
+	));
+	return {
+		tabs,
+	};
+}
+
+const mapDispatchToTabsProps = (dispatch) => (
+	{
+		onClick: (id) => (
+			dispatch({
+				type: 'OPEN_THREAD',
+				id: id,
+			})
+		)
+	}
+);
+
+const ThreadTabs = ReactRedux.connect(
+ mapStateToTabsProps,
+ mapDispatchToTabsProps
+)(Tabs);
+
+/*OLD-------------------------------------------------
 class ThreadTabs extends React.Component {
 	componentDidMount() {
 		store.subscribe(() => this.forceUpdate());
@@ -126,6 +156,8 @@ class ThreadTabs extends React.Component {
 		);
 	}
 }
+OLD-------------------------------------------------*/
+
 
 const TextFieldSubmit = (props) => {
 	let input;
@@ -151,6 +183,7 @@ const MessageList = (props) => (
 					onClick={() => props.onClick(m.id)}>
 					<div className='text'>
 						{m.text}
+						<span className='metadata'>@{m.timestamp}</span>
 					</div>
 				</div>
 			))
@@ -166,6 +199,45 @@ const Thread = (props) => (
 	</div>
 );
 
+const mapStateToThreadProps = (state) => (
+	{
+		thread: state.threads.find(t => t.id === state.activeThreadId),
+	}
+);
+
+const mapDispatchToThreadProps = (dispatch) => (
+	{
+		onMessageClick: (id) => (
+			dispatch({
+				type: 'DELETE_MESSAGE',
+				id: id,
+			})
+		),
+		dispatch: dispatch,
+	}
+);
+
+const mergeThreadProps = (stateProps, dispatchProps) => (
+	{
+		...stateProps,
+		...dispatchProps,
+		onMessageSubmit: (text) => (
+			dispatchProps.dispatch({
+				type: 'ADD_MESSAGE',
+				text: text,
+				threadId: stateProps.thread.id,
+			})
+		),
+	}
+);
+
+const ThreadDisplay = ReactRedux.connect(
+	mapStateToThreadProps,
+	mapDispatchToThreadProps,
+	mergeThreadProps
+)(Thread);
+
+/*OLD-------------------------------------------------
 class ThreadDisplay extends React.Component {
 	componentDidMount() {
 		store.subscribe(() => this.forceUpdate());
@@ -195,6 +267,7 @@ class ThreadDisplay extends React.Component {
 		);
 	}
 }
+OLD-------------------------------------------------*/
 
 ReactDOM.render(
 	<ReactRedux.Provider store={store}>
